@@ -99,7 +99,7 @@ AI-CURRICULUM-RECOMMENDER/
    pip install -r requirements.txt
    ```
 3. **Run the application**
-
+   NOTE: Please do Create the Python Environment 
    ```bash
    python app.py
    ```
