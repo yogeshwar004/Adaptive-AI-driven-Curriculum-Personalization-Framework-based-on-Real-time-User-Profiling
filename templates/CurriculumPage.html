@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Curriculum</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+.duration-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .dark .duration-btn.active {
+            background-color: #3b82f6;
+        }
+        
+        .phase-button.active {
+            background-color: #22C55E;
+            color: white;
+        }
+        .dark .phase-button.active {
+            background-color: #22C55E;
+            color: white;
+        }
+
+        #sliderThumb {
+            transform: translateY(-50%) translateX(-50%);
+            transition: left 0.2s ease;
+        }
+        .slider-label {
+            transition: color 0.2s ease;
+        }
+        .slider-label.active {
+            color: #3b82f6;
+            font-weight: 700;
+        }
+        .dark .slider-label.active {
+            color: #60a5fa;
+        }
+
+        .step-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #22C55E;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+            z-index: 1;
+        }
+        
+        .step-container.upload-view-active .upload-overlay {
+            transform: scaleX(1);
+        }
+        
+        .step-container .step-header,
+        .step-container .step-content-normal,
+        .step-container .step-content-upload {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-container.upload-view-active .step-header,
+        .step-container.upload-view-active .step-header h4,
+        .step-container.upload-view-active .step-header svg {
+            color: white !important;
+        }
+        
+        .dropbox {
+            border: 2px dashed #9ca3af;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .dropbox.dragover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: #60a5fa;
+        }
+        
+        .dropbox .hover-links {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .dropbox.has-file:hover .hover-links {
+            opacity: 1;
+        }
+
+        .dropbox.has-file .dropbox-prompt {
+            display: none;
+        }
+        .dropbox.has-file {
+            background-size: cover;
+            background-position: center;
+            border-style: solid; 
+        }
+
+        /* --- REVISED STYLES FOR BADGES --- */
+        @keyframes shimmer-effect {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .upcoming-badge-shimmer {
+            position: relative;
+            overflow: hidden;
+            background-color: #e2e8f0; /* slate-200 */
+        }
+        .dark .upcoming-badge-shimmer {
+            background-color: #334155; /* slate-700 */
+        }
+
+        .upcoming-badge-shimmer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+            animation: shimmer-effect 2.5s linear infinite;
+        }
+
+        .badge-font {
+          font-family: Georgia, 'Times New Roman', Times, serif;
+          letter-spacing: 0.5px;
+        }
+
+        .badge-locked {
+          filter: grayscale(1) opacity(0.45);
+          cursor: not-allowed;
+          transition: all 0.2s ease;
+        }
+
+    </style>
+</head>
+
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans">
+
+    <header class="fixed top-0 left-0 w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-md z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="text-xl font-bold text-blue-600 dark:text-blue-400">Infera</div>
+            <div class="flex items-center space-x-4">
+                <button class="focus:outline-none relative text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"><i data-feather="bell"></i><span class="absolute top-0 right-0 inline-block w-2 h-2 bg-red-600 rounded-full"></span></button>
+                <div class="relative">
+                    <button id="profileDropdownBtn" class="focus:outline-none rounded-full w-10 h-10 bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><i data-feather="user" class="text-slate-500 dark:text-slate-400"></i></button>
+                    <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-md shadow-lg z-50">
+                        <a href="#" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">My Profile</a>
+                        <a href="#" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">Billing</a>
+                        <a href="/logout" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">Logout</a>
+                    </div>
+                </div>
+                <button id="toggleMode" onclick="document.documentElement.classList.toggle('dark')" class="ml-2 focus:outline-none text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"><i data-feather="moon"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <div class="w-full lg:w-[60%]">
+                <a href="{{ url_for('dashboard_page') }}" class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline mb-4 font-semibold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Back to Dashboard
+                </a>
+                
+                <div id="mainContents" class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+                    <h1 id="curriculumTitle" class="text-3xl lg:text-4xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-400">Loading Curriculum...</h1>
+                    
+                    <div id="durationSelector" class="mb-9">
+                        <h2 class="text-lg font-semibold mb-4 dark:text-slate-200">Select Your Duration</h2>
+            
+                        <div class="relative w-full max-w-[200px] pt-2">
+                            <div class="relative h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full">
+                                <div id="sliderThumb" class="absolute top-1/2 w-3.5 h-3.5 bg-blue-500 rounded-full shadow-lg cursor-pointer" style="left: 0%;"></div>
+                            </div>
+                            <div class="flex justify-between mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                                <span id="label-short" class="slider-label cursor-pointer">Short</span>
+                                <span id="label-moderate" class="slider-label cursor-pointer">Moderate</span>
+                                <span id="label-long" class="slider-label cursor-pointer">Long</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                    <div id="curriculumRoadmap" class="space-y-4">
+                        </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-[40%] space-y-6">
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold mb-4"><i data-feather="sliders" class="text-violet-500 w-6 h-6 inline-block mr-3"></i>Overall Progress</h2>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-medium">Total Curriculum Progress</span><span id="total-xp-label">0 / 0 XP</span></div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
+                            <div id="total-xp-bar" class="bg-gradient-to-r from-violet-500 to-purple-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <p class="text-xs text-right mt-1 text-slate-500 dark:text-slate-400">XPs Redeemable: <span id="redeemable-xp-label">0</span></p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold mb-4"><i data-feather="clock" class="text-blue-400 w-6 h-6 inline-block mr-3"></i>Learning Hours</h2>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-medium">Total Time Spent</span>
+                        <span id="hours-progress-label">0 / 0 Hours</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
+                        <div id="hours-progress-bar" class="bg-gradient-to-r from-blue-400 to-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div id="xp-section" class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold mb-2"><i data-feather="star" class="text-amber-400 w-6 h-6 inline-block mr-3"></i>XP Earned</h2>
+
+                    <hr class="my-6 border-slate-200 dark:border-slate-700">
+
+                    <div id="xp-duration-container">
+                        <div id="xp-short-path" class="duration-xp-section space-y-4 hidden">
+                            </div>
+                        <div id="xp-moderate-path" class="duration-xp-section space-y-4 hidden">
+                            </div>
+                        <div id="xp-long-path" class="duration-xp-section space-y-4 hidden">
+                            </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold flex items-center gap-3">
+                            <i data-feather="award" class="text-green-400 w-6 h-6"></i>
+                            <span>Badges Earned</span>
+                        </h2>
+                        <span id="badge-counter" class="font-bold text-sm text-slate-500 dark:text-slate-400">0/0</span>
+                    </div>
+
+                    <div class="text-center p-6 bg-slate-50 dark:bg-slate-900/50 rounded-lg mb-6 ">
+                        <h3 class="text-sm font-semibold text-blue-500 dark:text-blue-400 mb-4 tracking-wider uppercase">UPCOMING BADGE</h3>
+                        <div id="upcoming-badge-container">
+                            <p class="text-slate-500 dark:text-slate-400">Complete the current step to earn your next badge!</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold mb-4 text-slate-600 dark:text-slate-300">Badges Catalogue</h3>
+                        <div id="badges-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-y-6 gap-x-4">
+                            <p class="text-slate-500 dark:text-slate-400 col-span-full">Your earned badges will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+    // --- Navbar and Theme Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+        feather.replace();
+        document.getElementById('profileDropdownBtn').addEventListener('click', () => {
+            document.getElementById('profileDropdown').classList.toggle('hidden');
+        });
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    });
+
+    // --- Curriculum Page Logic ---
+    const CurriculumManager = {
+        nodes: {},
+        state: {
+            isDragging: false,
+            curriculumData: {},
+            userProgress: {},
+            goalId: null,
+            orderedStepIds: [],
+            pathKeys: ["Short Duration Path", "Moderate Duration Path", "Long Duration Path"],
+            xpTotals: {
+                overall: 0,
+                paths: {},
+                phases: {}
+            },
+            hourTotals: {
+                paths: {},
+                completed: 0
+            },
+            currentPathKey: "Short Duration Path",
+            // --- REVISED: Badge Designs ---
+            badgeDesigns: {
+                 "Default": `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`
+            },
+        },
+
+        buildStepMap() {
+            this.state.stepMap = {};
+            this.state.pathKeys.forEach(pathKey => {
+                const pathData = this.state.curriculumData[pathKey] || [];
+                pathData.forEach(phase => {
+                    phase.Steps.forEach(step => {
+                        const stepId = step.Step.replace(/[^a-zA-Z0-9]/g, '-');
+                        if (!this.state.stepMap[stepId]) {
+                            this.state.stepMap[stepId] = step;
+                        }
+                    });
+                });
+            });
+        },
+
+        handleXpSectionClick(e) {
+            const toggleBtn = e.target.closest('.toggle-phase-details-btn');
+            if (!toggleBtn) return;
+            const targetId = toggleBtn.dataset.targetId;
+            const stepsContainer = document.getElementById(targetId);
+            if (stepsContainer) {
+                const isHidden = stepsContainer.classList.toggle('hidden');
+                toggleBtn.textContent = isHidden ? 'Show Details' : 'Show Less';
+            }
+        },
+
+        init() {
+            this.cacheNodes();
+            if (this.validateNodes()) {
+                this.state.curriculumData = {{ curriculum_data | tojson }};
+                this.state.goalId = {{ goal_id }};
+                if (this.state.curriculumData && this.state.curriculumData.Title) {
+                    this.nodes.curriculumTitle.textContent = this.state.curriculumData.Title;
+                    this.buildStepMap();
+                    this.calculateXpTotals();
+                    this.calculateHourTotals();
+                    this.bindEvents();
+                    this.fetchAndRenderInitialView();
+                } else {
+                    this.nodes.curriculumTitle.textContent = "Could not load curriculum.";
+                }
+            }
+        },
+
+        cacheNodes() {
+            this.nodes.curriculumTitle = document.getElementById('curriculumTitle');
+            this.nodes.curriculumRoadmap = document.getElementById('curriculumRoadmap');
+            this.nodes.sliderThumb = document.getElementById('sliderThumb');
+            this.nodes.sliderContainer = this.nodes.sliderThumb ? this.nodes.sliderThumb.parentElement : null;
+            this.nodes.labels = {
+                short: document.getElementById('label-short'),
+                moderate: document.getElementById('label-moderate'),
+                long: document.getElementById('label-long'),
+            };
+            this.nodes.totalXpLabel = document.getElementById('total-xp-label');
+            this.nodes.totalXpBar = document.getElementById('total-xp-bar');
+            this.nodes.redeemableXpLabel = document.getElementById('redeemable-xp-label');
+            this.nodes.xpDurationContainer = document.getElementById('xp-duration-container');
+            this.nodes.hoursProgressLabel = document.getElementById('hours-progress-label');
+            this.nodes.hoursProgressBar = document.getElementById('hours-progress-bar');
+            this.nodes.badgeCounter = document.getElementById('badge-counter');
+            this.nodes.upcomingBadgeContainer = document.getElementById('upcoming-badge-container');
+            this.nodes.badgesGrid = document.getElementById('badges-grid');
+        },
+
+        validateNodes() {
+            const essentialNodes = [
+                this.nodes.curriculumTitle, this.nodes.curriculumRoadmap, this.nodes.sliderThumb,
+                this.nodes.sliderContainer, ...Object.values(this.nodes.labels), this.nodes.totalXpLabel,
+                this.nodes.totalXpBar, this.nodes.redeemableXpLabel, this.nodes.xpDurationContainer,
+                this.nodes.hoursProgressLabel, this.nodes.hoursProgressBar, 
+                this.nodes.badgeCounter, this.nodes.upcomingBadgeContainer, this.nodes.badgesGrid
+            ];
+            if (essentialNodes.some(node => !node)) {
+                console.error("Curriculum Manager Error: One or more essential HTML elements could not be found.");
+                if (this.nodes.curriculumTitle) {
+                    this.nodes.curriculumTitle.textContent = "Error: Page elements not found.";
+                }
+                return false;
+            }
+            return true;
+        },
+
+        bindEvents() {
+            this.nodes.sliderThumb.addEventListener('mousedown', () => { this.state.isDragging = true; });
+            document.addEventListener('mouseup', () => {
+                if (this.state.isDragging) {
+                    this.state.isDragging = false;
+                    this.snapSliderAndRender();
+                }
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!this.state.isDragging) return;
+                const rect = this.nodes.sliderContainer.getBoundingClientRect();
+                const newX = e.clientX - rect.left;
+                const percent = (newX / rect.width) * 100;
+                this.updateSliderUI(percent);
+            });
+            Object.entries(this.nodes.labels).forEach(([key, label], index) => {
+                label.addEventListener('click', () => {
+                    const snapPos = index * 50;
+                    this.updateSliderUI(snapPos, true);
+                    this.renderCurriculum(this.state.pathKeys[index]);
+                });
+            });
+            this.nodes.curriculumRoadmap.addEventListener('click', this.handleRoadmapClick.bind(this));
+            this.nodes.curriculumRoadmap.addEventListener('change', this.handleFileInputChange.bind(this));
+            this.nodes.curriculumRoadmap.addEventListener('dragover', this.handleDragOver.bind(this));
+            this.nodes.curriculumRoadmap.addEventListener('dragleave', this.handleDragLeave.bind(this));
+            this.nodes.curriculumRoadmap.addEventListener('drop', this.handleDrop.bind(this));
+            this.nodes.xpDurationContainer.addEventListener('click', this.handleXpSectionClick.bind(this));
+        },
+
+        calculateXpTotals() {
+            let overallTotal = 0;
+            this.state.pathKeys.forEach(pathKey => {
+                const pathData = this.state.curriculumData[pathKey] || [];
+                let pathTotal = 0;
+                this.state.xpTotals.phases[pathKey] = {};
+                pathData.forEach((phase, phaseIndex) => {
+                    let phaseTotal = 0;
+                    phase.Steps.forEach(step => {
+                        phaseTotal += step.XPs || 0;
+                    });
+                    this.state.xpTotals.phases[pathKey][`phase-${phaseIndex}`] = phaseTotal;
+                    pathTotal += phaseTotal;
+                });
+                this.state.xpTotals.paths[pathKey] = pathTotal;
+                overallTotal += pathTotal;
+            });
+            this.state.xpTotals.overall = overallTotal;
+        },
+
+        calculateHourTotals() {
+            this.state.pathKeys.forEach(pathKey => {
+                const pathData = this.state.curriculumData[pathKey] || [];
+                let pathTotalHours = 0;
+                pathData.forEach(phase => {
+                    phase.Steps.forEach(step => {
+                        const paceString = step["Learning Pace"] || "0";
+                        pathTotalHours += parseInt(paceString.split(/[- ]+/)[0], 10)*step.Duration || 0;
+                    });
+                });
+                this.state.hourTotals.paths[pathKey] = pathTotalHours;
+            });
+        },
+        
+        renderLearningHours() {
+            const { userProgress, currentPathKey, curriculumData, hourTotals } = this.state;
+            let completedHours = 0;
+            const pathData = curriculumData[currentPathKey] || [];
+            pathData.forEach(phase => {
+                phase.Steps.forEach(step => {
+                    const stepId = step.Step.replace(/[^a-zA-Z0-9]/g, '-');
+                    if (userProgress[stepId]) {
+                        const paceString = step["Learning Pace"] || "0";
+                        completedHours += parseInt(paceString.split(/[- ]+/)[0], 10)*step.Duration || 0;
+                    }
+                });
+            });
+            this.state.hourTotals.completed = completedHours;
+            const totalHoursForCurrentPath = hourTotals.paths[currentPathKey] || 0;
+            const percentage = totalHoursForCurrentPath > 0 ? (completedHours / totalHoursForCurrentPath) * 100 : 0;
+            this.nodes.hoursProgressLabel.textContent = `${completedHours} / ${totalHoursForCurrentPath} Hours`;
+            this.nodes.hoursProgressBar.style.width = `${percentage}%`;
+        },
+
+        renderXpSection() {
+            const { curriculumData, userProgress, xpTotals, currentPathKey } = this.state;
+            let totalEarnedXp = 0;
+            Object.keys(userProgress).forEach(stepId => {
+                const step = this.findStepById(stepId);
+                if (step) totalEarnedXp += step.XPs;
+            });
+            const overallPercentage = xpTotals.overall > 0 ? (totalEarnedXp / xpTotals.overall) * 100 : 0;
+            this.nodes.totalXpBar.style.width = `${overallPercentage}%`;
+            this.nodes.totalXpLabel.textContent = `${totalEarnedXp} / ${xpTotals.overall} XP`;
+            this.nodes.redeemableXpLabel.textContent = `${xpTotals.overall - totalEarnedXp}`;
+            document.querySelectorAll('.duration-xp-section').forEach(el => el.classList.add('hidden'));
+            const activeXpSection = document.getElementById(`xp-${currentPathKey.split(' ')[0].toLowerCase()}-path`);
+            if (activeXpSection) {
+                activeXpSection.classList.remove('hidden');
+                activeXpSection.innerHTML = '';
+            }
+            const pathData = curriculumData[currentPathKey] || [];
+            let pathEarnedXp = 0;
+            let phaseUnlocked = true;
+            pathData.forEach((phase, phaseIndex) => {
+                if (!phaseUnlocked) return;
+                let phaseEarnedXp = 0;
+                let allStepsInPhaseComplete = true;
+                const stepsHtml = phase.Steps.map(step => {
+                    const stepId = step.Step.replace(/[^a-zA-Z0-9]/g, '-');
+                    const isComplete = !!userProgress[stepId];
+                    if (isComplete) {
+                        phaseEarnedXp += step.XPs;
+                    } else {
+                        allStepsInPhaseComplete = false;
+                    }
+                    const stepPercentage = isComplete ? 100 : 0;
+                    return `<div class="ml-4"><div class="flex justify-between text-xs mb-1"><span class="font-medium">${step.Step}</span><span>${isComplete ? step.XPs : 0} / ${step.XPs} XP</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5"><div class="bg-gradient-to-r from-blue-400 to-cyan-300 h-1.5 rounded-full" style="width: ${stepPercentage}%"></div></div></div>`;
+                }).join('');
+                pathEarnedXp += phaseEarnedXp;
+                const phaseTotalXp = xpTotals.phases[currentPathKey][`phase-${phaseIndex}`];
+                const phasePercentage = phaseTotalXp > 0 ? (phaseEarnedXp / phaseTotalXp) * 100 : 0;
+                const stepsContainerId = `phase-steps-${currentPathKey.split(' ')[0].toLowerCase()}-${phaseIndex}`;
+                const phaseHtml = `<div><div class="flex justify-between text-sm mb-1"><span class="font-bold">${phase.Phase.split(':')[0]}</span><span>${phaseEarnedXp} / ${phaseTotalXp} XP</span></div><div class="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2.5"><div class="bg-gradient-to-r from-green-400 to-teal-400 h-2.5 rounded-full" style="width: ${phasePercentage}%"></div></div><p class="text-xs text-right mt-1 text-slate-500">${phasePercentage.toFixed(0)}% Complete</p><div id="${stepsContainerId}" class="phase-steps-container space-y-3 mt-3 hidden">${stepsHtml}</div><div class="text-left mt-1"><button class="toggle-phase-details-btn text-xs font-semibold text-slate-500 dark:text-gray-400 hover:underline hover:text-green-400 dark:hover:text-green-400" data-target-id="${stepsContainerId}">Show Details</button></div></div>`;
+                activeXpSection.innerHTML += phaseHtml;
+                if (!allStepsInPhaseComplete) {
+                    phaseUnlocked = false;
+                }
+            });
+            const pathTotalXp = xpTotals.paths[currentPathKey];
+            const pathPercentage = pathTotalXp > 0 ? (pathEarnedXp / pathTotalXp) * 100 : 0;
+            const totalPathHtml = `<div><div class="flex justify-between text-sm mb-1"><span class="font-bold">${currentPathKey} Progress</span><span>${pathEarnedXp} / ${pathTotalXp} XP</span></div><div class="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2.5"><div class="bg-gradient-to-r from-amber-400 to-orange-400 h-2.5 rounded-full" style="width: ${pathPercentage}%"></div></div><p class="text-xs text-right mt-1 text-slate-500">${pathPercentage.toFixed(0)}% Complete</p></div><hr class="my-4 border-slate-200 dark:border-slate-700">`;
+            activeXpSection.insertAdjacentHTML('afterbegin', totalPathHtml);
+        },
+
+        // --- REVISED: DYNAMIC BADGE RENDERING FUNCTION ---
+        renderBadges() {
+            const { currentPathKey, curriculumData, userProgress, orderedStepIds, badgeDesigns } = this.state;
+            
+            const allStepsInPath = (curriculumData[currentPathKey] || []).flatMap(phase => phase.Steps);
+            const allBadgesInPath = [...new Set(allStepsInPath.map(step => step.Badges))];
+
+            const earnedBadges = new Set();
+            Object.keys(userProgress).forEach(stepId => {
+                const step = this.findStepById(stepId);
+                if (step && allStepsInPath.includes(step)) {
+                    earnedBadges.add(step.Badges);
+                }
+            });
+
+            let upcomingBadgeName = null;
+            for (const stepId of orderedStepIds) {
+                const step = this.findStepById(stepId);
+                if (step && !earnedBadges.has(step.Badges)) {
+                    upcomingBadgeName = step.Badges;
+                    break;
+                }
+            }
+
+            this.nodes.badgeCounter.textContent = `${earnedBadges.size}/${allBadgesInPath.length}`;
+
+            // Render the Upcoming Badge with new shimmer animation
+            if (upcomingBadgeName) {
+                const iconSvg = badgeDesigns["Default"];
+                this.nodes.upcomingBadgeContainer.innerHTML = `
+                    <div class="w-24 h-24 mx-auto rounded-full upcoming-badge-shimmer text-slate-500 dark:text-slate-400 p-3">
+                        ${iconSvg}
+                    </div>
+                    <p class="mt-4 font-bold text-lg badge-font text-slate-800 dark:text-slate-100">${upcomingBadgeName}</p>
+                `;
+            } else if (allBadgesInPath.length > 0) {
+                 this.nodes.upcomingBadgeContainer.innerHTML = `
+                    <div class="w-24 h-24 mx-auto text-green-500">${badgeDesigns['Default']}</div>
+                    <p class="mt-2 font-semibold text-green-500">Congratulations! You've earned all badges for this path!</p>`;
+            } else {
+                 this.nodes.upcomingBadgeContainer.innerHTML = `<p class="text-slate-500 dark:text-slate-400">No badges available for this path.</p>`;
+            }
+
+            // Render the Badges Grid with Feather Award icons and conditional coloring
+            if (allBadgesInPath.length > 0) {
+                this.nodes.badgesGrid.innerHTML = allBadgesInPath.map(badgeName => {
+                    const isEarned = earnedBadges.has(badgeName);
+                    const isLocked = !isEarned;
+                    const iconSvg = badgeDesigns["Default"];
+                    const iconColorClass = isEarned ? 'text-amber-500' : 'text-slate-400 dark:text-slate-600';
+                    const bgColorClass = isEarned ? 'bg-amber-400/10' : 'bg-slate-200 dark:bg-slate-800';
+                    
+                    return `
+                        <div class="text-center ${isLocked ? 'badge-locked' : ''}" title="${badgeName}${isLocked ? ' (Locked)' : ' (Earned)'}">
+                            <div class="w-16 h-16 mx-auto p-2 rounded-full ${bgColorClass} ${iconColorClass}">
+                                ${iconSvg}
+                            </div>
+                            <p class="mt-2 text-xs font-bold badge-font">${badgeName}</p>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                this.nodes.badgesGrid.innerHTML = `<p class="text-slate-500 dark:text-slate-400 col-span-full">No badges to display.</p>`;
+            }
+        },
+
+        findStepById(stepIdToFind) {
+            return this.state.stepMap[stepIdToFind] || null;
+        },
+
+        renderCurriculum(pathKey) {
+            this.state.currentPathKey = pathKey;
+            const pathData = this.state.curriculumData[pathKey];
+            this.state.orderedStepIds = [];
+            if (!pathData || pathData.length === 0) {
+                this.nodes.curriculumRoadmap.innerHTML = `<p class="text-slate-500 dark:text-slate-400">No curriculum available for this duration.</p>`;
+                return;
+            }
+            const roadmapHtml = pathData.map((phase, index) => {
+                const [phaseLabel, ...phaseTitleParts] = phase.Phase.split(/:\s*/);
+                const phaseTitle = phaseTitleParts.join(': ');
+                const stepsHtml = phase.Steps.map(step => {
+                    const stepId = step.Step.replace(/[^a-zA-Z0-9]/g, '-');
+                    this.state.orderedStepIds.push(stepId);
+                    const courses = Array.isArray(step.Courses) ? step.Courses : [step];
+                    const coursesHtml = courses.map(course => {
+                        const altLinkHtml = course['Alternative Free Link'] ? `<a href="${course['Alternative Free Link']}" target="_blank" class="inline-flex items-center gap-1 text-green-500 hover:underline font-semibold">Free Alternative <i data-feather="arrow-right" class="w-4 h-4"></i></a>` : '';
+                        return `<div class="mt-3 pl-4 text-sm space-y-2 border-l-2 border-slate-200 dark:border-slate-600"><p><strong><span><i data-feather="shopping-bag" class="w-4 h-4 inline-block -mt-2"></i> Course by: ${course.Provider || 'N/A'}</span></strong></p><p><strong>Duration:</strong> ${course.Duration} weeks</p><p class="leading-relaxed"><strong>Description:</strong> ${course.Description.replace(/\n/g, '<br>')}</p><div class="flex items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400 mt-2"><span><i data-feather="clock" class="w-4 h-4 inline-block -mt-1"></i> Pace: ${course['Learning Pace']}</span><span><i data-feather="star" class="w-4 h-4 inline-block -mt-1"></i> XP: ${course.XPs}</span><span><i data-feather="award" class="w-4 h-4 inline-block -mt-1"></i> Badge: ${course.Badges}</span></div><div class="flex gap-4 mt-8"><a href="${course['Course Link']}" target="_blank" class="inline-flex items-center gap-1 text-blue-500 hover:underline font-semibold">Go to Course <i data-feather="arrow-right" class="w-4 h-4"></i></a>${altLinkHtml}</div></div>`;
+                    }).join('<hr class="my-3 border-slate-200 dark:border-slate-700">');
+                    return `<div class="step-container bg-slate-50 dark:bg-slate-900/50 border-l-4 border-green-500 p-4 rounded-r-lg relative" data-step-id="${stepId}"><div class="upload-overlay"></div><div class="absolute top-2 right-2 z-10 flex flex-col items-end gap-2"><button class="mark-complete-btn p-1.5 bg-white/50 dark:bg-slate-800/50 rounded-full hover:bg-green-100 dark:hover:bg-green-900/50 transition"><i data-feather="thumbs-up" class="w-5 h-5 text-green-600 dark:text-white"></i></button><button class="upload-btn hidden px-3 py-1.5 border border-slate-50 dark:border-0 bg-green-500 text-white text-xs font-semibold rounded-full hover:bg-green-600 transition">Upload</button></div><div class="step-header"><h4 class="font-semibold text-lg flex items-center gap-3"><i data-feather="book-open" class="w-5 h-5 text-green-500"></i><span>${step.Step}</span></h4></div><div class="step-content-normal space-y-2 mt-2">${coursesHtml}</div><div class="step-content-upload hidden mt-4 flex gap-4"><div class="dropbox w-[40%] h-48 flex flex-col items-center justify-center rounded-lg bg-black/10 dark:bg-white/5 relative"><input type="file" class="hidden file-input" accept="image/jpeg, image/png"><div class="dropbox-prompt text-center text-white"><i data-feather="upload-cloud" class="w-10 h-10 mx-auto"></i><p class="mt-2 text-sm font-semibold">Drag & Drop or Click</p><p class="text-xs">PNG or JPG</p></div><div class="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 hover-links"><a href="#" target="_blank" class="view-link inline-flex items-center gap-1 px-3 py-1.5 bg-white text-black text-xs font-bold rounded-full">View</a><button class="reupload-link inline-flex items-center gap-1 px-3 py-1.5 bg-white text-black text-xs font-bold rounded-full">Re-upload</button></div></div><div class="flex-1 text-white"><h5 class="font-bold mb-1">Proof of Completion</h5><p class="text-xs flex items-center gap-2 mb-3">* Upload a Certificate or even a Screen-Shot of completion</p><p class="text-sm flex items-center gap-2 mb-3"><i data-feather="star" class="w-4 h-4"></i> <b>XP:</b> ${step.XPs}</p><p class="text-sm flex items-center gap-2 mb-3"><i data-feather="award" class="w-4 h-4"></i><b> Badge:</b> ${step.Badges}</p><p class="text-sm flex items-center gap-2 mb-3"><i data-feather="clock" class="w-4 h-4"></i> <b>Time Taken:</b> --</p><p class="text-sm flex items-center gap-2 mb-3"><i data-feather="shopping-bag" class="w-4 h-4"></i><b> Course Provider:</b>${step.Provider.split('-')[0]}</p></div></div><div class="absolute bottom-2 right-2 z-10"><button class="back-to-details-btn hidden mt-4 inline-flex items-center gap-2 text-white font-semibold text-xs px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full transition"><i data-feather="arrow-left" class="w-4 h-4"></i> Back to Details</button></div></div>`;
+                }).join('');
+                return `<div class="phase-container mb-4"><div class="flex items-center"><button class="phase-button flex-shrink-0 px-4 h-10 rounded-full border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center transition-all duration-300" data-phase-index="${index}">${phaseLabel}</button><h3 class="font-bold text-lg text-slate-700 dark:text-slate-200 ml-4">${phaseTitle}</h3></div><div class="phase-content hidden mt-4 space-y-4">${stepsHtml}</div></div>`;
+            }).join('');
+            this.nodes.curriculumRoadmap.innerHTML = roadmapHtml;
+            this.applyProgressUI();
+            feather.replace();
+            this.renderXpSection();
+            this.renderLearningHours();
+            this.renderBadges();
+        },
+
+        applyProgressUI() {
+            document.querySelectorAll('.step-container').forEach(container => {
+                const stepId = container.dataset.stepId;
+                if (this.state.userProgress[stepId]) {
+                    const dropbox = container.querySelector('.dropbox');
+                    this.displayImageInDropbox(this.state.userProgress[stepId], dropbox);
+                }
+            });
+            this.updateCompletionStatus();
+        },
+
+        updateCompletionStatus() {
+            let firstUncompletedFound = false;
+            this.state.orderedStepIds.forEach(stepId => {
+                const container = document.querySelector(`.step-container[data-step-id="${stepId}"]`);
+                if (!container) return;
+                const completeBtn = container.querySelector('.mark-complete-btn');
+                const isComplete = !!this.state.userProgress[stepId];
+                if (isComplete) {
+                    completeBtn.disabled = false;
+                    completeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    completeBtn.innerHTML = `<i data-feather="check-circle" class="w-5 h-5 text-green-600"></i>`;
+                } else {
+                    if (!firstUncompletedFound) {
+                        completeBtn.disabled = false;
+                        completeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        completeBtn.innerHTML = `<i data-feather="thumbs-up" class="w-5 h-5 text-green-600 dark:text-white"></i>`;
+                        firstUncompletedFound = true;
+                    } else {
+                        completeBtn.disabled = true;
+                        completeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        completeBtn.innerHTML = `<i data-feather="lock" class="w-5 h-5 text-slate-400"></i>`;
+                    }
+                }
+            });
+            feather.replace();
+        },
+
+        async fetchAndRenderInitialView() {
+            try {
+                const response = await fetch(`/api/get_progress/${this.state.goalId}`);
+                if (!response.ok) throw new Error('Failed to fetch progress');
+                this.state.userProgress = await response.json();
+            } catch (error) {
+                console.error('Error fetching progress:', error);
+                this.state.userProgress = {};
+            } finally {
+                this.updateSliderUI(0);
+                this.renderCurriculum(this.state.pathKeys[0]);
+            }
+        },
+
+        handleFile(file, dropbox) {
+            if (!file || !['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Invalid file type. Please upload a JPG or PNG image.');
+                return;
+            }
+            const stepContainer = dropbox.closest('.step-container');
+            const stepId = stepContainer.dataset.stepId;
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('goal_id', this.state.goalId);
+            formData.append('step_id', stepId);
+            fetch('/api/upload_proof', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) return response.json().then(err => { throw new Error(err.message) });
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    this.displayImageInDropbox(data.url, dropbox);
+                    this.state.userProgress[stepId] = data.url;
+                    this.updateCompletionStatus();
+                    this.renderXpSection();
+                    this.renderLearningHours();
+                    this.renderBadges();
+                } else {
+                    alert('Upload failed: ' + data.message);
+                }
+            }).catch(error => {
+                console.error('Upload fetch error:', error);
+                alert('An error occurred during upload.');
+            });
+        },
+
+        handleRoadmapClick(e) {
+            const button = e.target.closest('.phase-button');
+            const completeBtn = e.target.closest('.mark-complete-btn');
+            const uploadBtn = e.target.closest('.upload-btn');
+            const dropbox = e.target.closest('.dropbox');
+            const reuploadLink = e.target.closest('.reupload-link');
+            const backBtn = e.target.closest('.back-to-details-btn');
+            if (button) {
+                button.closest('.phase-container').querySelector('.phase-content').classList.toggle('hidden');
+                button.classList.toggle('active');
+            } else if (completeBtn) {
+                if (completeBtn.disabled) {
+                    alert("Please complete the previous steps in the roadmap first!");
+                    return;
+                }
+                const uploadButton = completeBtn.nextElementSibling;
+                uploadButton.classList.toggle('hidden');
+                completeBtn.classList.toggle('bg-green-200');
+            } else if (uploadBtn) {
+                const stepContainer = uploadBtn.closest('.step-container');
+                stepContainer.classList.add('upload-view-active');
+                stepContainer.querySelector('.back-to-details-btn').classList.remove('hidden');
+                uploadBtn.classList.add('hidden');
+                stepContainer.querySelector('.step-content-normal').classList.add('hidden');
+                stepContainer.querySelector('.step-content-upload').classList.remove('hidden');
+            } else if (backBtn) {
+                const stepContainer = backBtn.closest('.step-container');
+                stepContainer.classList.remove('upload-view-active');
+                stepContainer.querySelector('.back-to-details-btn').classList.add('hidden');
+                stepContainer.querySelector('.step-content-normal').classList.remove('hidden');
+                stepContainer.querySelector('.step-content-upload').classList.add('hidden');
+            } else if (reuploadLink) {
+                reuploadLink.closest('.dropbox').querySelector('.file-input').click();
+            } else if (dropbox && !dropbox.classList.contains('has-file')) {
+                dropbox.querySelector('.file-input').click();
+            }
+        },
+
+        handleFileInputChange(e) {
+            if (e.target.matches('.file-input')) {
+                this.handleFile(e.target.files[0], e.target.closest('.dropbox'));
+            }
+        },
+
+        handleDragOver(e) {
+            const dropbox = e.target.closest('.dropbox');
+            if (dropbox) {
+                e.preventDefault();
+                dropbox.classList.add('dragover');
+            }
+        },
+
+        handleDragLeave(e) {
+            const dropbox = e.target.closest('.dropbox');
+            if (dropbox) {
+                e.preventDefault();
+                dropbox.classList.remove('dragover');
+            }
+        },
+
+        handleDrop(e) {
+            const dropbox = e.target.closest('.dropbox');
+            if (dropbox) {
+                e.preventDefault();
+                dropbox.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                this.handleFile(file, dropbox);
+            }
+        },
+
+        displayImageInDropbox(imageUrl, dropbox) {
+            dropbox.style.backgroundImage = `url('${imageUrl}')`;
+            dropbox.querySelector('.view-link').href = imageUrl;
+            dropbox.classList.add('has-file');
+        },
+
+        updateSliderUI(position, animate = false) {
+            const percent = Math.max(0, Math.min(100, position));
+            this.nodes.sliderThumb.style.transition = animate ? 'left 0.2s ease' : 'none';
+            this.nodes.sliderThumb.style.left = `${percent}%`;
+            Object.values(this.nodes.labels).forEach(label => label.classList.remove('active'));
+            if (percent < 25) this.nodes.labels.short.classList.add('active');
+            else if (percent > 75) this.nodes.labels.long.classList.add('active');
+            else this.nodes.labels.moderate.classList.add('active');
+        },
+
+        snapSliderAndRender() {
+            const currentPos = parseFloat(this.nodes.sliderThumb.style.left);
+            let snapPos = 0;
+            let pathKey = this.state.pathKeys[0];
+            if (currentPos > 75) {
+                snapPos = 100;
+                pathKey = this.state.pathKeys[2];
+            } else if (currentPos > 25) {
+                snapPos = 50;
+                pathKey = this.state.pathKeys[1];
+            }
+            this.updateSliderUI(snapPos, true);
+            this.renderCurriculum(pathKey);
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        CurriculumManager.init();
+    });
+
+</script>
+
+</body>
+</html>

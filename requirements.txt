@@ -1,0 +1,25 @@
+# Core Web Framework
+Flask==2.3.3
+Flask-Cors==4.0.0
+
+# Environment Management
+python-dotenv==1.0.1
+
+# AI / LLM Integration
+openai==1.12.0
+
+# Data Handling
+numpy==1.26.4
+pandas==2.2.2
+
+# Gamification & Utilities
+uuid==1.30
+
+# JSON & Validation
+pydantic==2.7.1
+
+# Logging & HTTP Requests
+requests==2.32.3
+
+# Optional (for production / scaling)
+gunicorn==21.2.0

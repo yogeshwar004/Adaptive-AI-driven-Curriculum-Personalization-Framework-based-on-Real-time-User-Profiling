@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartLearnAI - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* General Dashboard Styles */
+        @keyframes feedbackFade {
+            0% { opacity: 0; transform: translateY(10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        .animate-feedback { animation: feedbackFade 3s ease-in-out forwards; }
+        .glow-input { position: relative; z-index: 0; border-radius: 2px; transition: filter 0.6s ease, opacity 0.6s ease; }
+        .glow-input::before { content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px; background: linear-gradient(45deg, #4f46e5, #3b82f6, #06b6d4, #10b981, #7c3aed); z-index: -1; filter: blur(3px); border-radius: 6px; animation: glow 4.5s ease infinite; background-size: 300% 300%; transition: opacity 0.6s ease; }
+        .glow-dimmed::before { opacity: 0.45; }
+        @keyframes glow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .arrow-button { background: transparent; }
+        .arrow-button svg { transition: fill 0.3s ease; fill: #9ca3af; }
+        .dark .arrow-button svg { fill: #6b7280; }
+        .arrow-button:hover svg { transform: translateX(5px) rotate(90deg); transition: transform 0.3s ease; }
+        .arrow-button:hover { background: linear-gradient(to left, rgba(59, 130, 246, 1), transparent); opacity: 0.85; }
+        .dark .arrow-button:hover { background: linear-gradient(to left, rgba(25, 118, 210, 1), transparent); opacity: 1; }
+        .arrow-button:hover svg { fill: #ffffff; }
+        .dark .arrow-button:hover svg { fill: #374151; }
+        .gradient-glow { background: linear-gradient(45deg, #ec4899, #8b5cf6, #3b82f6, #ec4899); background-size: 300% 300%; animation: moveGradient 2.5s ease infinite; display: inline-block; }
+        .pulse-effect { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes moveGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.6; } }
+        .animation-delay-200 { animation-delay: 0.2s; }
+        .animation-delay-500 { animation-delay: 0.5s; }
+        .animation-delay-800 { animation-delay: 0.8s; }
+
+        /* Questionnaire Styles */
+        .step-btn .icon-wrapper { transition: background-color 0.3s ease, transform 0.3s ease; }
+        .step-btn.active .icon-wrapper { background-color: #3b82f6 !important; transform: scale(1.1); }
+        .step-btn.completed .icon-wrapper { background-color: #2563eb !important; }
+        .step-btn.active .icon, .step-btn.completed .icon { color: white; }
+        .step-btn:disabled .icon-wrapper { background-color: #d1d5db; cursor: not-allowed; }
+        .dark .step-btn:disabled .icon-wrapper { background-color: #4b5563; }
+        .section { transition: opacity 0.5s ease, transform 0.5s ease; }
+        .option-btn.selected { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+        .option-btn.selected .icon-path { fill: white; }
+        .dark .option-btn.selected { border-color: #3b82f6; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .domain-btn-x { display: none; }
+        .option-btn.selected .domain-btn-x { display: inline-flex; }
+
+        /* Loading Animation Styles */
+        @keyframes icon-fade {
+            0%, 100% { opacity: 0; transform: scale(0.9); }
+            20%, 80% { opacity: 1; transform: scale(1); }
+        }
+        #loadingIconContainer i {
+            animation: icon-fade 4s ease-in-out infinite;
+        }
+
+    </style>
+</head>
+
+
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans">
+
+    <!-- NEW: Loading Animation Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex-col items-center justify-center text-white font-semibold hidden">
+        <div id="loadingIconContainer" class="w-25 h-25 mb-4">
+            <!-- Animated icon will be injected here -->
+        </div>
+        <p id="loadingMessage" class="text-lg">Initializing...</p>
+    </div>
+
+{% if message %}
+  <div id="feedbackMessage"
+       class="animate-feedback absolute bottom-6 left-1/3 transform -translate-x-1/2 text-white font-medium bg-green-600 px-4 py-2 rounded-full shadow-lg z-50">
+    {{ message }}
+  </div>
+{% endif %}
+
+    <!--NavBar-->
+    <header class="fixed top-0 left-0 w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-md z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="text-xl font-bold text-blue-600 dark:text-blue-400">Infera</div>
+            <div class="flex items-center space-x-4">
+                <button class="focus:outline-none relative text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"><i data-feather="bell"></i><span class="absolute top-0 right-0 inline-block w-2 h-2 bg-red-600 rounded-full"></span></button>
+                <div class="relative">
+                    <button id="profileDropdownBtn" class="focus:outline-none rounded-full w-10 h-10 bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><i data-feather="user" class="text-slate-500 dark:text-slate-400"></i></button>
+                    <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-md shadow-lg z-50">
+                        <a href="#" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">My Profile</a>
+                        <a href="#" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">Billing</a>
+                        <a href="/logout" class="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700">Logout</a>
+                    </div>
+                </div>
+                <button id="toggleMode" onclick="document.documentElement.classList.toggle('dark')" class="ml-2 focus:outline-none text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"><i data-feather="moon"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-16 bg-gradient-to-r from-blue-50 to-white dark:from-gray-800 dark:to-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col-reverse lg:flex-row items-center">
+            <div class="w-full lg:w-1/2 text-center lg:text-left">
+                <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight mb-6">Welcome, {{username}}</h1>
+                <p class="text-lg mb-6">Glad to have you back!</p>
+            </div>
+            <div class="w-full lg:w-1/2">
+                <div class="glow-box bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md mx-auto">
+                    <h2 class="text-xl font-semibold mb-4">Explore something New</h2>
+                    <div id="glowWrapper" class="glow-input mb-4 relative w-full">
+                        <form id="pathForm" class="relative w-full">
+                            <input type="text" id="userInput" placeholder="I want to become a data analyst..." class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded focus:ring-2 focus:ring-blue-300" value="{{ prefilled_prompt or '' }}" />
+                            <button type="submit" class="arrow-button absolute top-0 right-0 h-full w-[15%] rounded-r transition duration-300 flex items-center justify-center">
+                                <svg height="20px" width="20px" viewBox="0 0 330 330" transform="rotate(90)" class="transition duration-300"><path d="M100.606,100.606L150,51.212V315c0,8.284,6.716,15,15,15 c8.284,0,15-6.716,15-15V51.212l49.394,49.394 C232.322,103.535,236.161,105,240,105c3.839,0, 7.678-1.465,10.606-4.394c5.858-5.857, 5.858-15.355,0-21.213l-75-75c-5.857-5.858, -15.355-5.858-21.213,0l-75,75c-5.858, 5.857-5.858,15.355,0,21.213 C85.251,106.463,94.749,106.463,100.606,100.606z" /></svg>
+                            </button>
+                        </form>
+                    </div>
+                     <!-- suggestBtn-->
+                    <div class="mt-6 flex justify-center space-x-4">
+                        <div class="relative group">
+                            <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:shadow-xl px-4 py-2 rounded-xl transition relative z-10" id="suggestBtn">
+                                <svg height="20px" width="20px" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" xml:space="preserve">
+                                    <style type="text/css">.st0 { fill: #3b82f6; }</style>
+                                    <g><path class="st0" d="M494.696,155.436l-75.664-19.918c-24.946-6.56-44.421-26.036-50.982-50.963L348.142,8.892 C346.769,3.647,342.032,0,336.618,0c-5.424,0-10.161,3.647-11.542,8.892l-19.908,75.664c-6.56,24.927-26.036,44.402-50.982,50.963 l-75.664,19.918c-5.245,1.381-8.892,6.109-8.892,11.533c0,5.424,3.647,10.151,8.892,11.534l75.664,19.917 c24.946,6.552,44.422,26.036,50.982,50.963l19.908,75.665c1.381,5.245,6.119,8.892,11.542,8.892c5.414,0,10.151-3.647,11.524-8.892 l19.907-75.665c6.561-24.927,26.036-44.411,50.982-50.963l75.664-19.917c5.244-1.382,8.892-6.11,8.892-11.534 C503.587,161.546,499.94,156.818,494.696,155.436z"/><path class="st0" d="M207.001,402.949l-46.226-12.163c-15.236-4.004-27.136-15.904-31.14-31.13l-12.172-46.226 c-0.837-3.215-3.723-5.432-7.041-5.432c-3.308,0-6.203,2.218-7.04,5.432l-12.163,46.226c-4.014,15.226-15.913,27.126-31.149,31.13 l-46.226,12.163c-3.196,0.846-5.432,3.741-5.432,7.049c0,3.309,2.237,6.204,5.432,7.049l46.226,12.163 c15.236,4.004,27.136,15.904,31.149,31.131l12.163,46.226c0.836,3.215,3.732,5.433,7.04,5.433c3.318,0,6.204-2.218,7.041-5.433 l12.172-46.226c4.004-15.227,15.904-27.127,31.14-31.131l46.226-12.163c3.196-0.845,5.432-3.74,5.432-7.049 C212.434,406.69,210.197,403.795,207.001,402.949z"/></g>
+                                </svg>
+                                <span>Suggest Me a Path</span>
+                            </button>
+                            <!-- Tooltip Box -->
+                            <div class="absolute right-full top-1/2 transform -translate-y-1/2 mr-4 w-72 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300 z-20">
+                                <div class="flex items-center gap-3 px-4 py-2 text-sm text-gray-800 dark:text-gray-200 font-normal">
+                                    <svg class="w-5 h-5 text-blue-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M256 0c70.69 0 134.69 28.66 181.02 74.98C483.34 121.3 512 185.31 512 256c0 70.69-28.66 134.7-74.98 181.02C390.69 483.34 326.69 512 256 512c-70.69 0-134.69-28.66-181.02-74.98C28.66 390.69 0 326.69 0 256c0-70.69 28.66-134.69 74.98-181.02C121.31 28.66 185.31 0 256 0zm-9.96 161.03c0-4.28.76-8.26 2.27-11.91 1.5-3.63 3.77-6.94 6.79-9.91 3-2.95 6.29-5.2 9.84-6.7 3.57-1.5 7.41-2.28 11.52-2.28 4.12 0 7.96.78 11.49 2.27 3.54 1.51 6.78 3.76 9.75 6.73 2.95 2.97 5.16 6.26 6.64 9.91 1.49 3.63 2.22 7.61 2.22 11.89 0 4.17-.73 8.08-2.21 11.69-1.48 3.6-3.68 6.94-6.65 9.97-2.94 3.03-6.18 5.32-9.72 6.84-3.54 1.51-7.38 2.29-11.52 2.29-4.22 0-8.14-.76-11.75-2.26-3.58-1.51-6.86-3.79-9.83-6.79-2.94-3.02-5.16-6.34-6.63-9.97-1.48-3.62-2.21-7.54-2.21-11.77zm13.4 178.16c-1.11 3.97-3.35 11.76 3.3 11.76 1.44 0 3.27-.81 5.46-2.4 2.37-1.71 5.09-4.31 8.13-7.75 3.09-3.5 6.32-7.65 9.67-12.42 3.33-4.76 6.84-10.22 10.49-16.31.37-.65 1.23-.87 1.89-.48l12.36 9.18c.6.43.73 1.25.35 1.86-5.69 9.88-11.44 18.51-17.26 25.88-5.85 7.41-11.79 13.57-17.8 18.43l-.1.06c-6.02 4.88-12.19 8.55-18.51 11.01-17.58 6.81-45.36 5.7-53.32-14.83-5.02-12.96-.9-27.69 3.06-40.37l19.96-60.44c1.28-4.58 2.89-9.62 3.47-14.33.97-7.87-2.49-12.96-11.06-12.96h-17.45c-.76 0-1.38-.62-1.38-1.38l.08-.48 4.58-16.68c.16-.62.73-1.04 1.35-1.02l89.12-2.79c.76-.03 1.41.57 1.44 1.33l-.07.43-37.76 124.7zm158.3-244.93c-41.39-41.39-98.58-67-161.74-67-63.16 0-120.35 25.61-161.74 67-41.39 41.39-67 98.58-67 161.74 0 63.16 25.61 120.35 67 161.74 41.39 41.39 98.58 67 161.74 67 63.16 0 120.35-25.61 161.74-67 41.39-41.39 67-98.58 67-161.74 0-63.16-25.61-120.35-67-161.74z" /></svg>
+                                    <span class="text-gray-700 dark:text-gray-300 font-light"><p>Get AI-based suggestions depending on your <span class="font-medium">Goals</span> and <span class="font-medium">Skill Level!</span></p></span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Dictate Button + Trash Button Wrapper -->
+                        <div class="flex items-center space-x-4">
+                            <!-- Glowing Ring Wrapper -->
+                            <div id="dictateWrapper" class="rounded-xl transition-all">
+                                <div id="glowRing" class="p-0 rounded-xl transition-all">
+                                    <button id="dictateBtn" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:shadow-xl px-4 py-2 rounded-xl transition border-2 border-transparent bg-white dark:bg-gray-800">
+                                        <svg id="dictateIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 82.05 122.88"><style>.st0 { fill: #3b82f6; }</style><path class="st0" d="M59.89,20.83V52.3c0,27-37.73,27-37.73,0V20.83c0-27.77,37.73-27.77,37.73,0Zm-14.18,76V118.2a4.69,4.69,0,0,1-9.37,0V96.78a40.71,40.71,0,0,1-12.45-3.51A41.63,41.63,0,0,1,12.05,85L12,84.91A41.31,41.31,0,0,1,3.12,71.68,40.73,40.73,0,0,1,0,56a4.67,4.67,0,0,1,8-3.31l.1.1A4.68,4.68,0,0,1,9.37,56a31.27,31.27,0,0,0,2.4,12.06A32,32,0,0,0,29,85.28a31.41,31.41,0,0,0,24.13,0,31.89,31.89,0,0,0,10.29-6.9l.08-.07a32,32,0,0,0,6.82-10.22A31.27,31.27,0,0,0,72.68,56a4.69,4.69,0,0,1,9.37,0,40.65,40.65,0,0,1-3.12,15.65A41.45,41.45,0,0,1,70,85l-.09.08a41.34,41.34,0,0,1-11.75,8.18,40.86,40.86,0,0,1-12.46,3.51Z"/></svg>
+                                        <span id="dictateText">Dictate it</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Trash Button -->
+                            <button id="trashBtn" class="hidden group p-2 rounded-full hover:shadow-xl px-4 py-2 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 48 48" class="fill-gray-600 dark:fill-gray-500 transition-colors duration-200 group-hover:fill-[#fa5252]"><path d="M 24 4 C 20.491685 4 17.570396 6.6214322 17.080078 10 L 10.238281 10 A 1.50015 1.50015 0 0 0 9.9804688 9.9785156 A 1.50015 1.50015 0 0 0 9.7578125 10 L 6.5 10 A 1.50015 1.50015 0 1 0 6.5 13 L 8.6386719 13 L 11.15625 39.029297 C 11.427329 41.835926 13.811782 44 16.630859 44 L 31.367188 44 C 34.186411 44 36.570826 41.836168 36.841797 39.029297 L 39.361328 13 L 41.5 13 A 1.50015 1.50015 0 1 0 41.5 10 L 38.244141 10 A 1.50015 1.50015 0 0 0 37.763672 10 L 30.919922 10 C 30.429604 6.6214322 27.508315 4 24 4 z M 24 7 C 25.879156 7 27.420767 8.2681608 27.861328 10 L 20.138672 10 C 20.579233 8.2681608 22.120844 7 24 7 z M 11.650391 13 L 36.347656 13 L 33.855469 38.740234 C 33.730439 40.035363 32.667963 41 31.367188 41 L 16.630859 41 C 15.331937 41 14.267499 40.033606 14.142578 38.740234 L 11.650391 13 z M 20.476562 17.978516 A 1.50015 1.50015 0 0 0 19 19.5 L 19 34.5 A 1.50015 1.50015 0 1 0 22 34.5 L 22 19.5 A 1.50015 1.50015 0 0 0 20.476562 17.978516 z M 27.476562 17.978516 A 1.50015 1.50015 0 0 0 26 19.5 L 26 34.5 A 1.50015 1.50015 0 1 0 29 34.5 L 29 19.5 A 1.50015 1.50015 0 0 0 27.476562 17.978516 z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Main Content Sections from Dashboard -->
+    <div class="flex w-full h-[600px] px-4 sm:px-10 mt-10 gap-8">
+        <!-- Left Section (60%) -->
+        <div class="w-[60%] bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-500 ease-in-out">
+            <div class="flex justify-between mb-2 h-[15%]">
+                <!-- Top Buttons -->
+    			<button id="eventsBtn" class="w-1/2 flex justify-center items-center space-x-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:shadow-xl px-4 py-2 rounded-xl transition relative z-10">
+        			<i data-feather="calendar" class="w-5 h-5 text-blue-500"></i>
+        			<span class="font-medium">Upcoming High-Reward Events</span>
+    			</button>
+    			<button id="goalsBtn" class="w-1/2 flex justify-center items-center space-x-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:shadow-xl px-4 py-2 rounded-xl transition relative z-10">
+        			<i data-feather="crosshair" class="w-5 h-5 text-blue-500"></i>
+        			<span class="font-medium">Weekly Goals</span>
+    			</button>
+            </div>
+            <div id="dynamicSection" class="h-0 overflow-hidden transition-all duration-500 ease-in-out"></div>
+            <div id="continueLearning" class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mt-4 mb-4 flex-grow transition-all duration-500 ease-in-out">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-100">Continue Exploring</h2>
+                <div id="pastGoalsContainer" class="space-y-2">
+                    {% if past_goals %}
+                        {% for goal in past_goals %}
+                            <a href="{{ url_for('curriculum_page', goal_id=goal.id) }}" class="block w-full text-left p-3 bg-white dark:bg-gray-600 dark:text-gray-200 rounded shadow hover:bg-gray-50 dark:hover:bg-gray-500 transition">
+                                Curriculum: {{ goal.title }}
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-700 dark:text-gray-300">No past curriculums found. Explore something new to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="bg-gray-100 dark:bg-gray-700 h-[30%] rounded shadow p-4">
+                <p class="text-center text-gray-500 dark:text-gray-300">Reserved for future content...</p>
+            </div>
+        </div>
+        <!-- Right Section -->
+        <div class="w-[40%] bg-gray-50 dark:bg-gray-800 rounded shadow p-4 flex flex-col gap-6 overflow-auto">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Your Dashboard</h2>
+            <div class="bg-white dark:bg-gray-700 rounded shadow p-3">
+                <h3 class="text-md font-semibold mb-1 text-gray-800 dark:text-gray-100">Learning Progress</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300">You are 70% through your AI course.</p>
+            </div>
+            <div class="bg-white dark:bg-gray-700 rounded shadow p-3">
+                <h3 class="text-md font-semibold mb-1 text-gray-800 dark:text-gray-100">Leaderboard</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Rank #4 this week</p>
+            </div>
+            <div class="bg-white dark:bg-gray-700 rounded shadow p-3">
+                <h3 class="text-md font-semibold mb-1 text-gray-800 dark:text-gray-100">Badges</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300">3 New Badges Unlocked</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 dark:bg-gray-800 text-center p-4 text-sm mt-10">
+        <p class="text-gray-600 dark:text-gray-300">© 2025 SmartLearnAI. All rights reserved.</p>
+        <div class="mt-4 space-x-4">
+            <a href="#" class="text-blue-600 hover:underline">Privacy</a>
+            <a href="#" class="text-blue-600 hover:underline">Terms</a>
+            <a href="mailto:support@smartlearn.ai" class="text-blue-600 hover:underline">Contact</a>
+        </div>
+    </footer>
+
+    <!-- Questionnaire Modal -->
+    <div id="questionnaireModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl w-[60%] max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative">
+            <button id="closeQuestionnaireBtn" class="absolute top-4 right-4 text-gray-400 hover:fill-[#fa5252] z-10">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="p-4 border-b dark:border-gray-700 relative">
+                <div id="stepContainer" class="flex justify-around items-center"></div>
+                <div class="absolute bottom-0 left-0 h-1 bg-gray-200 dark:bg-gray-700 w-full"><div id="progressLine" class="absolute h-full bg-blue-500 transition-all duration-500 ease-in-out" style="left: 0%; width: 0%;"></div></div>
+            </div>
+            <div id="mainContentArea" class="p-6 overflow-y-auto flex-1 dark:text-gray-100">
+                <div id="section-1" class="section">
+                    <h2 class="text-2xl font-bold text-center text-blue-600 dark:text-blue-400 mb-2">Firstly,</h2>
+                    <h2 class="text-2xl font-bold text-center mb-6">Tell us who you are.</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button class="option-btn general-option p-4 border dark:border-gray-600 rounded-xl text-center flex flex-col items-center justify-center h-32 hover:shadow-lg dark:hover:bg-gray-700 transition" data-value="Working Professional"><i data-feather="briefcase" class="mb-2 w-8 h-8"></i><span class="font-semibold">Professional</span></button>
+                        <button class="option-btn general-option p-4 border dark:border-gray-600 rounded-xl text-center flex flex-col items-center justify-center h-32 hover:shadow-lg dark:hover:bg-gray-700 transition" data-value="Teacher"><i data-feather="airplay" class="mb-2 w-8 h-8"></i><span class="font-semibold">Teacher</span></button>
+                        <button class="option-btn general-option p-4 border dark:border-gray-600 rounded-xl text-center flex flex-col items-center justify-center h-32 hover:shadow-lg dark:hover:bg-gray-700 transition" data-value="Student"><i data-feather="book" class="mb-2 w-8 h-8"></i><span class="font-semibold">Student</span></button>
+                        <button class="option-btn general-option p-4 border dark:border-gray-600 rounded-xl text-center flex flex-col items-center justify-center h-32 hover:shadow-lg dark:hover:bg-gray-700 transition" data-value="Other"><i data-feather="archive" class="mb-2 w-8 h-8"></i><span class="font-semibold">Other</span></button>
+                    </div>
+                </div>
+                <div id="section-2" class="section hidden">
+                    <h2 class="text-2xl font-bold text-center text-blue-600 dark:text-blue-400 mb-2">Alright,</h2>
+                    <h2 class="text-2xl font-bold text-center mb-6">What's your highest qualification?</h2>
+                    <div class="flex flex-col gap-3 max-w-md mx-auto">
+                         <button class="option-btn level-option px-4 py-3 border dark:border-gray-600 rounded-xl flex items-center gap-4 hover:shadow-md dark:hover:bg-gray-700 transition" data-value="Class 10th"><svg class="w-6 h-6" viewBox="0 0 24 24"><path class="icon-path" fill="#4b5563" d="M8.5 2.5a.75.75 0 01.75.75v2.5h5V3.25a.75.75 0 011.5 0v2.5h.75a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6h.75V3.25a.75.75 0 011.5 0v2.5h.75a.75.75 0 01.75-.75zM5.25 7.5A.75.75 0 004.5 8.25v10.5c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V8.25a.75.75 0 00-.75-.75H5.25zm4.5 5.5a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5H9.75z"/></svg><span class="font-medium">Class 10th</span></button>
+                         <button class="option-btn level-option px-4 py-3 border dark:border-gray-600 rounded-xl flex items-center gap-4 hover:shadow-md dark:hover:bg-gray-700 transition" data-value="Class 12th"><svg class="w-6 h-6" viewBox="0 0 24 24"><path class="icon-path" fill="#4b5563" d="M8.5 2.5a.75.75 0 01.75.75v2.5h5V3.25a.75.75 0 011.5 0v2.5h.75a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6h.75V3.25a.75.75 0 011.5 0v2.5h.75a.75.75 0 01.75-.75zM5.25 7.5A.75.75 0 004.5 8.25v10.5c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V8.25a.75.75 0 00-.75-.75H5.25zm4.5 5.5a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5H9.75z"/></svg><span class="font-medium">Class 12th</span></button>
+                         <button class="option-btn level-option px-4 py-3 border dark:border-gray-600 rounded-xl flex items-center gap-4 hover:shadow-md dark:hover:bg-gray-700 transition" data-value="Under Graduate"><svg class="w-6 h-6" viewBox="0 0 24 24"><path class="icon-path" fill="#4b5563" d="M8.5 2.5a.75.75 0 01.75.75v2.5h5V3.25a.75.75 0 011.5 0v2.5h.75a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6h.75V3.25a.75.75 0 011.5 0v2.5h.75a.75.75 0 01.75-.75zM5.25 7.5A.75.75 0 004.5 8.25v10.5c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V8.25a.75.75 0 00-.75-.75H5.25zm4.5 5.5a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5H9.75z"/></svg><span class="font-medium">Under Graduate</span></button>
+                         <button class="option-btn level-option px-4 py-3 border dark:border-gray-600 rounded-xl flex items-center gap-4 hover:shadow-md dark:hover:bg-gray-700 transition" data-value="Post Graduate"><svg class="w-6 h-6" viewBox="0 0 24 24"><path class="icon-path" fill="#4b5563" d="M8.5 2.5a.75.75 0 01.75.75v2.5h5V3.25a.75.75 0 011.5 0v2.5h.75a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6h.75V3.25a.75.75 0 011.5 0v2.5h.75a.75.75 0 01.75-.75zM5.25 7.5A.75.75 0 004.5 8.25v10.5c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V8.25a.75.75 0 00-.75-.75H5.25zm4.5 5.5a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5H9.75z"/></svg><span class="font-medium">Post Graduate</span></button>
+                         <button class="option-btn level-option px-4 py-3 border dark:border-gray-600 rounded-xl flex items-center gap-4 hover:shadow-md dark:hover:bg-gray-700 transition" data-value="Diploma"><svg class="w-6 h-6" viewBox="0 0 24 24"><path class="icon-path" fill="#4b5563" d="M8.5 2.5a.75.75 0 01.75.75v2.5h5V3.25a.75.75 0 011.5 0v2.5h.75a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6h.75V3.25a.75.75 0 011.5 0v2.5h.75a.75.75 0 01.75-.75zM5.25 7.5A.75.75 0 004.5 8.25v10.5c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V8.25a.75.75 0 00-.75-.75H5.25zm4.5 5.5a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5H9.75z"/></svg><span class="font-medium">Diploma</span></button>
+                         <button class="option-btn level-option px-4 py-3 border dark:border-gray-600 rounded-xl flex items-center gap-4 hover:shadow-md dark:hover:bg-gray-700 transition" data-value="Doctorate"><svg class="w-6 h-6" viewBox="0 0 24 24"><path class="icon-path" fill="#4b5563" d="M8.5 2.5a.75.75 0 01.75.75v2.5h5V3.25a.75.75 0 011.5 0v2.5h.75a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6h.75V3.25a.75.75 0 011.5 0v2.5h.75a.75.75 0 01.75-.75zM5.25 7.5A.75.75 0 004.5 8.25v10.5c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V8.25a.75.75 0 00-.75-.75H5.25zm4.5 5.5a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5H9.75z"/></svg><span class="font-medium">Doctorate (Ph.D.)</span></button>
+                    </div>
+                </div>
+                <div id="section-3" class="section hidden">
+                    <h2 class="text-2xl font-bold text-center text-blue-600 dark:text-blue-400 mb-2">Brilliant.</h2>
+                    <h2 class="text-2xl font-bold text-center mb-6">What are your areas of interest?</h2>
+                    <p class="text-center text-gray-500 dark:text-gray-400 mb-4 -mt-4">Select one or more domains to specify courses.</p>
+                    <div id="mainDomainContainer" class="flex flex-wrap justify-center gap-3 mb-4"></div>
+                    <div id="domainDetailsContainer" class="mt-6 space-y-4 border-t dark:border-gray-700 pt-4"></div>
+                </div>
+                <div id="section-4" class="section hidden">
+                    <h2 class="text-2xl font-bold text-center text-blue-600 dark:text-blue-400 mb-2">Finally,</h2>
+                    <h2 class="text-2xl font-bold text-center mb-6">A few more details.</h2>
+                    <div class="max-w-xl mx-auto">
+                        <div class="mb-6">
+                            <h3 class="font-semibold text-lg mb-3">Ideal Course Duration:</h3>
+                            <div class="flex flex-wrap gap-3">
+                                <button class="option-btn duration-option px-4 py-2 border dark:border-gray-600 rounded-full dark:hover:bg-gray-700" data-value="4 weeks">4 weeks</button>
+                                <button class="option-btn duration-option px-4 py-2 border dark:border-gray-600 rounded-full dark:hover:bg-gray-700" data-value="8 weeks">8 weeks</button>
+                                <button class="option-btn duration-option px-4 py-2 border dark:border-gray-600 rounded-full dark:hover:bg-gray-700" data-value="12 weeks">12 weeks</button>
+                                <button class="option-btn duration-option px-4 py-2 border dark:border-gray-600 rounded-full dark:hover:bg-gray-700" data-value="24+ weeks">24+ weeks</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Primary reason for this path?</h3>
+                            <textarea id="user-reason" class="w-full border dark:border-gray-600 rounded-lg p-3 bg-transparent" rows="4" placeholder="e.g., career change, skill upgrade, hobby..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="footer" class="p-4 border-t dark:border-gray-700 flex justify-end items-center">
+                <button id="nextBtn" class="hidden bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-600 transition">Next</button>
+                <button id="submitBtn" class="hidden bg-green-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-600 transition">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Main Dashboard Page Scripts ---
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+            
+            // Dropdown toggle
+            document.getElementById('profileDropdownBtn').addEventListener('click', () => {
+                document.getElementById('profileDropdown').classList.toggle('hidden');
+            });
+
+            // Dynamic section toggle
+            const eventsBtn = document.getElementById('eventsBtn');
+            const goalsBtn = document.getElementById('goalsBtn');
+            const dynamicSection = document.getElementById('dynamicSection');
+            const continueLearning = document.getElementById('continueLearning');
+            let activeSection = null;
+
+            const toggleSection = (type) => {
+                if (activeSection === type) {
+                    dynamicSection.style.height = '0';
+                    dynamicSection.innerHTML = '';
+                    continueLearning.style.flexGrow = '1';
+                    activeSection = null;
+                } else {
+                    const content = type === 'events' ?
+                        `<div class="p-4 bg-indigo-100 dark:bg-indigo-900 text-gray-800 dark:text-gray-200 rounded shadow">🎯 High-Reward Event: "AI Quiz Challenge" – Auguest 24</div>` :
+                        `<div class="p-4 bg-emerald-100 dark:bg-emerald-900 text-gray-800 dark:text-gray-200 rounded shadow">📅 This Week's Goals: Complete 3 Modules, Score 80%+ in Quiz</div>`;
+                    dynamicSection.innerHTML = content;
+                    dynamicSection.style.height = '20%';
+                    continueLearning.style.flexGrow = '0.6';
+                    activeSection = type;
+                }
+            };
+            eventsBtn.addEventListener('click', () => toggleSection('events'));
+            goalsBtn.addEventListener('click', () => toggleSection('goals'));
+            
+            // --- Dictate and Suggest Logic ---
+            const dictateWrapper = document.getElementById('dictateWrapper');
+            const glowRing = document.getElementById('glowRing');
+            const dictateBtn = document.getElementById('dictateBtn');
+            const dictateIcon = document.getElementById('dictateIcon');
+            const dictateText = document.getElementById('dictateText');
+            const trashBtn = document.getElementById('trashBtn');
+            const userInputForSuggest = document.getElementById("userInput");
+            const originalPlaceholder = userInputForSuggest.placeholder;
+            const dictateBtnOriginalHTML = document.getElementById("dictateBtn").innerHTML;
+
+            dictateBtn.addEventListener('click', () => {
+                dictateIcon.style.display = 'none';
+                dictateBtn.innerHTML = `<div class="flex items-center justify-center w-full h-full space-x-2"><span class="w-1.5 h-1.5 rounded-full gradient-glow pulse-effect animation-delay-200"></span><span class="w-1.5 h-1.5 rounded-full gradient-glow pulse-effect animation-delay-500"></span><span class="w-1.5 h-1.5 rounded-full gradient-glow pulse-effect animation-delay-800"></span></div>`;
+                userInputForSuggest.value = "";
+                userInputForSuggest.placeholder = "Listening...";
+                glowRing.className = "flex items-center justify-center p-[2px] rounded-full gradient-glow";
+                trashBtn.classList.remove('hidden');
+            });
+
+            trashBtn.addEventListener('click', () => {
+                dictateBtn.innerHTML = dictateBtnOriginalHTML;
+                userInputForSuggest.placeholder = originalPlaceholder;
+                glowRing.className = "flex items-center justify-center p-0 rounded-xl transition-all";
+                trashBtn.classList.add('hidden');
+            });
+
+            document.getElementById("suggestBtn").addEventListener("click", function () {
+                const suggestions = ["Python for Data Science", "Intro to Web Development", "Java Fundamentals", "Machine Learning Basics", "Cybersecurity Essentials", "Intro to Python for Problem Solving", "Crash Course in UI/UX Design", "Java Essentials for Competitive Programming", "Gamified Roadmap to Machine Learning", "Full-Stack Web Development Bootcamp"];
+                userInputForSuggest.value = suggestions[Math.floor(Math.random() * suggestions.length)];
+            });
+
+        });
+
+        // --- Questionnaire Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const questionnaireModal = document.getElementById('questionnaireModal');
+            const closeQuestionnaireBtn = document.getElementById('closeQuestionnaireBtn');
+            const mainContentArea = document.getElementById('mainContentArea');
+            const sections = document.querySelectorAll('.section');
+            const stepContainer = document.getElementById('stepContainer');
+            const footer = document.getElementById('footer');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const progressLine = document.getElementById('progressLine');
+            const domainDetailsContainer = document.getElementById('domainDetailsContainer');
+            const mainDomainContainer = document.getElementById('mainDomainContainer');
+            const pathForm = document.getElementById('pathForm');
+            const userInput = document.getElementById('userInput');
+            
+            let mainPromptFromUser = "";
+
+            // --- Data and State ---
+            const STEPS = [
+                { id: 1, name: 'General', icon: `<svg class="w-6 h-6 icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>` },
+                { id: 2, name: 'Level', icon: `<svg class="w-6 h-6 icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 9-10-5-10 5 10 5 10-5Z"/><path d="m6 12 6 3 6-3"/><path d="m6 17 6 3 6-3"/></svg>` },
+                { id: 3, name: 'Domain', icon: `<svg class="w-6 h-6 icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>` },
+                { id: 4, name: 'Additional', icon: `<svg class="w-6 h-6 icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>` }
+            ];
+            const domainSubdomains = {
+                "Health Sciences": ["Anatomy", "Physiology", "Pharmacology", "Pathology", "Microbiology", "Biochemistry", "Genetics", "Immunology", "Public Health", "Epidemiology", "Nutrition", "Dietetics", "Physical Therapy", "Occupational Therapy", "Nursing", "Radiology", "Medical Lab Technology", "Optometry", "Dental Hygiene", "Clinical Psychology"],
+                "Management and Commerce": ["Financial Accounting", "Corporate Finance", "Investment Management", "International Business", "Marketing Management", "Digital Marketing", "Consumer Behavior", "Supply Chain Management", "Operations Management", "Human Resource Management", "Organizational Behavior", "Business Law", "Entrepreneurship", "E-commerce", "Business Analytics", "Economics", "Statistics", "Auditing", "Taxation", "Risk Management"],
+                "Education": ["Educational Psychology", "Curriculum Design & Development", "Instructional Technology (EdTech)", "Classroom Management", "Assessment & Evaluation", "Special Needs Education", "Early Childhood Education", "Higher Education Administration", "Adult Learning Theories", "Educational Leadership", "Comparative Education", "Sociology of Education", "Philosophy of Education", "Language Pedagogy", "STEM Education", "Arts in Education", "Guidance and Counseling", "Education Policy", "Research Methods in Education", "E-learning Design"],
+                "Law": ["Constitutional Law", "Criminal Law", "Corporate Law", "International Law", "Intellectual Property Law", "Cyber Law", "Environmental Law", "Human Rights Law", "Family Law", "Labor Law", "Tax Law", "Administrative Law", "Contract Law", "Torts", "Jurisprudence", "Alternative Dispute Resolution", "Competition Law", "Banking Law", "Real Estate Law", "Media Law"],
+                "Engineering & Technology": ["Data Structures & Algorithms", "Operating Systems", "Computer Networks", "Database Management Systems", "Artificial Intelligence", "Machine Learning", "Web Development", "Mobile App Development", "Cybersecurity", "Cloud Computing", "Robotics", "Mechanical Engineering Design", "Thermodynamics", "Fluid Mechanics", "Electrical Circuits", "Digital Electronics", "VLSI Design", "Civil Engineering Materials", "Structural Analysis", "Internet of Things (IoT)"],
+                "Humanitarian Arts": ["World History", "Political Philosophy", "Ethics", "Sociology", "Cultural Anthropology", "Linguistics", "Classical Literature", "Modern Philosophy", "Archaeology", "Art History", "Music Theory", "Film Studies", "Gender Studies", "Postcolonial Theory", "Geography", "Public Administration", "International Relations", "Journalism", "Creative Writing", "Cognitive Science"],
+                "Math & Sciences": ["Calculus", "Linear Algebra", "Differential Equations", "Probability & Statistics", "Classical Mechanics (Physics)", "Electromagnetism", "Quantum Mechanics", "Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Molecular Biology", "Ecology", "Genetics", "Astronomy", "Astrophysics", "Geology", "Environmental Science", "Meteorology", "Number Theory", "Discrete Mathematics"]
+            };
+
+            let currentSection = 1;
+            const maxSection = STEPS.length;
+            let highestCompletedSection = 0;
+            const responses = { general: '', level: '', domain: [], subdomains: {}, duration: [], reason: '' };
+
+            // --- Initialization ---
+            const initialize = () => {
+                stepContainer.innerHTML = STEPS.map(step => `
+                    <button class="step-btn flex flex-col items-center group" data-step="${step.id}" disabled>
+                        <span class="icon-wrapper bg-gray-200 dark:bg-gray-700 rounded-full p-3 transition text-gray-500 dark:text-gray-400">${step.icon}</span>
+                        <span class="text-sm mt-2 font-medium text-gray-600 dark:text-gray-300">${step.name}</span>
+                    </button>
+                `).join('');
+                
+                mainDomainContainer.innerHTML = Object.keys(domainSubdomains).map(domain => `
+                    <button class="option-btn domain-btn px-3 py-2 border dark:border-gray-600 rounded-full flex items-center gap-2 text-sm font-medium dark:hover:bg-gray-700" data-value="${domain}">
+                        ${domain} <span class="domain-btn-x items-center justify-center w-4 h-4 rounded-full bg-white/30 text-xs">&times;</span>
+                    </button>
+                `).join('');
+
+                updateDisplay();
+            };
+
+            // --- Core Functions ---
+            const openQuestionnaire = () => {
+                // Sync theme
+                if (document.documentElement.classList.contains('dark')) {
+                    questionnaireModal.classList.add('dark');
+                } else {
+                    questionnaireModal.classList.remove('dark');
+                }
+                questionnaireModal.classList.remove('hidden');
+            };
+
+            const updateDisplay = () => {
+                sections.forEach(section => section.classList.toggle('hidden', parseInt(section.id.split('-')[1]) !== currentSection));
+                
+                document.querySelectorAll('.step-btn').forEach(btn => {
+                    const step = parseInt(btn.dataset.step);
+                    btn.classList.toggle('active', step === currentSection);
+                    btn.classList.toggle('completed', step < currentSection || (step <= highestCompletedSection && step !== currentSection));
+                    btn.disabled = step > currentSection && step > highestCompletedSection + 1;
+                });
+
+                const showFooter = currentSection >= 3;
+                footer.classList.toggle('hidden', !showFooter);
+                nextBtn.classList.toggle('hidden', currentSection !== 3);
+                submitBtn.classList.toggle('hidden', currentSection !== 4);
+
+                const activeBtn = document.querySelector(`.step-btn[data-step="${currentSection}"]`);
+                const prevBtnEl = document.querySelector(`.step-btn[data-step="${currentSection - 1}"]`);
+                if (activeBtn) {
+                    const barStart = prevBtnEl ? prevBtnEl.offsetLeft + prevBtnEl.offsetWidth / 2 : 0;
+                    const barEnd = activeBtn.offsetLeft + activeBtn.offsetWidth / 2;
+                    progressLine.style.left = `${barStart}px`;
+                    progressLine.style.width = `${barEnd - barStart}px`;
+                }
+            };
+
+            const isSectionComplete = (section) => {
+                switch(section) {
+                    case 1: return !!responses.general;
+                    case 2: return !!responses.level;
+                    default: return true;
+                }
+            };
+            
+            const navigate = (direction) => {
+                const targetSection = currentSection + direction;
+                if (targetSection < 1 || targetSection > maxSection) return;
+
+                if (direction > 0) {
+                    if (!isSectionComplete(currentSection)) return;
+                    highestCompletedSection = Math.max(highestCompletedSection, currentSection);
+                }
+                currentSection = targetSection;
+                updateDisplay();
+            };
+            
+            // --- Sub-Category Drawer Logic ---
+            const toggleDomainDrawer = (domain) => {
+                let drawer = document.getElementById(`drawer-${domain.replace(/[^a-zA-Z0-9]/g, "")}`);
+                const isOpening = !drawer || drawer.classList.contains('hidden');
+                document.querySelectorAll('.domain-drawer').forEach(d => d.classList.add('hidden'));
+                if (!drawer) {
+                    drawer = createDomainDrawer(domain);
+                    domainDetailsContainer.appendChild(drawer);
+                }
+                if(isOpening) drawer.classList.remove('hidden');
+            };
+
+            const createDomainDrawer = (domain) => {
+                const drawerId = `drawer-${domain.replace(/[^a-zA-Z0-9]/g, "")}`;
+                const wrapper = document.createElement('div');
+                wrapper.id = drawerId;
+                wrapper.className = 'domain-drawer p-4 border dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50';
+                const allSubs = domainSubdomains[domain] || [];
+                wrapper.innerHTML = `
+                    <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-200">${domain} - Select Streams/Courses</h3>
+                    <div class="relative">
+                        <input type="text" class="search-subdomain w-full p-2 border dark:border-gray-600 rounded-md bg-transparent" placeholder="Search for a stream...">
+                        <div class="dropdown-arrow absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer"><svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                    </div>
+                    <div class="subdomain-options-list hidden h-48 overflow-y-auto border dark:border-gray-600 rounded-md mt-1 bg-white dark:bg-gray-800 z-10 absolute w-[95%]">
+                        ${allSubs.map(sub => `<div class="p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" data-value="${sub}">${sub}</div>`).join('')}
+                    </div>
+                    <div class="selected-subdomains-tags mt-4 flex flex-wrap gap-2 min-h-[2rem]"></div>
+                    <div class="text-right mt-4"><button class="done-btn bg-blue-500 text-white px-4 py-1 rounded-md text-sm">Done</button></div>
+                `;
+                addDrawerEventListeners(wrapper, domain);
+                renderSubdomainTags(wrapper.querySelector('.selected-subdomains-tags'), domain);
+                return wrapper;
+            };
+
+            const addDrawerEventListeners = (drawer, domain) => {
+                const searchInput = drawer.querySelector('.search-subdomain');
+                const optionsList = drawer.querySelector('.subdomain-options-list');
+                const dropdownArrow = drawer.querySelector('.dropdown-arrow');
+                const tagsContainer = drawer.querySelector('.selected-subdomains-tags');
+                dropdownArrow.addEventListener('click', () => optionsList.classList.toggle('hidden'));
+                searchInput.addEventListener('input', () => {
+                    const filter = searchInput.value.toLowerCase();
+                    optionsList.querySelectorAll('div').forEach(opt => {
+                        opt.style.display = opt.textContent.toLowerCase().includes(filter) ? '' : 'none';
+                    });
+                    optionsList.classList.remove('hidden');
+                });
+                optionsList.addEventListener('click', (e) => {
+                    if (e.target.dataset.value) {
+                        const sub = e.target.dataset.value;
+                        if (!responses.subdomains[domain].includes(sub)) {
+                            responses.subdomains[domain].push(sub);
+                            renderSubdomainTags(tagsContainer, domain);
+                        }
+                        searchInput.value = '';
+                        optionsList.classList.add('hidden');
+                    }
+                });
+                tagsContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-sub-tag')) {
+                        const subToRemove = e.target.dataset.value;
+                        const index = responses.subdomains[domain].indexOf(subToRemove);
+                        if (index > -1) {
+                            responses.subdomains[domain].splice(index, 1);
+                            renderSubdomainTags(tagsContainer, domain);
+                        }
+                    }
+                });
+                drawer.querySelector('.done-btn').addEventListener('click', () => drawer.classList.add('hidden'));
+            };
+            
+            const renderSubdomainTags = (tagsContainer, domain) => {
+                tagsContainer.innerHTML = (responses.subdomains[domain] || []).map(sub => `
+                    <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        ${sub} <button class="remove-sub-tag text-blue-600 hover:text-blue-800 dark:text-blue-300 font-bold" data-value="${sub}">&times;</button>
+                    </span>`).join('');
+            };
+
+            // --- Event Listeners ---
+            pathForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                mainPromptFromUser = userInput.value;
+                if (mainPromptFromUser) {
+                    openQuestionnaire();
+                } else {
+                    alert("Please tell us what's on your mind first!");
+                }
+            });
+
+            closeQuestionnaireBtn.addEventListener('click', () => {
+                questionnaireModal.classList.add('hidden');
+            });
+
+            nextBtn.addEventListener('click', () => navigate(1));
+            stepContainer.addEventListener('click', (e) => {
+                const stepBtn = e.target.closest('.step-btn');
+                if (stepBtn && !stepBtn.disabled) {
+                    currentSection = parseInt(stepBtn.dataset.step);
+                    updateDisplay();
+                }
+            });
+
+            document.querySelector('#section-1').addEventListener('click', (e) => {
+                const btn = e.target.closest('.general-option');
+                if (btn) {
+                    const value = btn.dataset.value;
+                    responses.general = responses.general === value ? '' : value;
+                    document.querySelectorAll('.general-option').forEach(b => b.classList.toggle('selected', b.dataset.value === responses.general));
+                    if(responses.general) {
+                        highestCompletedSection = Math.max(highestCompletedSection, 1);
+                        setTimeout(() => navigate(1), 300);
+                    }
+                }
+            });
+
+            document.querySelector('#section-2').addEventListener('click', (e) => {
+                const btn = e.target.closest('.level-option');
+                if (btn) {
+                    const value = btn.dataset.value;
+                    responses.level = responses.level === value ? '' : value;
+                    document.querySelectorAll('.level-option').forEach(b => b.classList.toggle('selected', b.dataset.value === responses.level));
+                     if(responses.level) {
+                        highestCompletedSection = Math.max(highestCompletedSection, 2);
+                        setTimeout(() => navigate(1), 300);
+                    }
+                }
+            });
+
+            mainDomainContainer.addEventListener('click', (e) => {
+                const domainBtn = e.target.closest('.domain-btn');
+                if (!domainBtn) return;
+                const domain = domainBtn.dataset.value;
+                const isDeselect = e.target.closest('.domain-btn-x');
+                if (isDeselect && domainBtn.classList.contains('selected')) {
+                    domainBtn.classList.remove('selected');
+                    const index = responses.domain.indexOf(domain);
+                    if (index > -1) responses.domain.splice(index, 1);
+                    delete responses.subdomains[domain];
+                    const drawer = document.getElementById(`drawer-${domain.replace(/[^a-zA-Z0-9]/g, "")}`);
+                    if (drawer) drawer.remove();
+                } else {
+                    if (!responses.domain.includes(domain)) {
+                        responses.domain.push(domain);
+                        responses.subdomains[domain] = [];
+                        domainBtn.classList.add('selected');
+                    }
+                    toggleDomainDrawer(domain);
+                }
+            });
+            
+            document.querySelector('#section-4 .duration-option').parentElement.addEventListener('click', (e) => {
+                const btn = e.target.closest('.duration-option');
+                if(btn) {
+                    const duration = btn.dataset.value;
+                    const index = responses.duration.indexOf(duration);
+                    if (index > -1) {
+                        responses.duration.splice(index, 1);
+                        btn.classList.remove('selected');
+                    } else {
+                        responses.duration.push(duration);
+                        btn.classList.add('selected');
+                    }
+                }
+            });
+
+            document.getElementById('user-reason').addEventListener('input', (e) => {
+                responses.reason = e.target.value;
+            });
+
+            submitBtn.addEventListener('click', () => {
+                // Construct the detailed prompt for the LLM
+                let details = `My Goal: "${mainPromptFromUser}"\n`;
+                details += `I am a: ${responses.general}\n`;
+                details += `My highest qualification is: ${responses.level}\n`;
+                if (responses.domain.length > 0) {
+                    details += `My domains of interest are: ${responses.domain.join(', ')}\n`;
+                    responses.domain.forEach(domain => {
+                        if (responses.subdomains[domain] && responses.subdomains[domain].length > 0) {
+                            details += `For ${domain}, I am specifically interested in: ${responses.subdomains[domain].join(', ')}\n`;
+                        }
+                    });
+                }
+                if (responses.duration.length > 0) {
+                    details += `My preferred course duration is: ${responses.duration.join(', ')}\n`;
+                }
+                if (responses.reason) {
+                    details += `My reason for this path is: "${responses.reason}"`;
+                }
+                const finalPromptForLLM = `Act as a professional curriculum recommender. I want you to provide me a Highly Detailed weekly Step-wise Roadmap of how i can achieve my goal. This Highly detailed plan must include sub-divisions/Steps: Each Step containing the links to the necessary and most appropriate course (or courses) that i must take up so that i can achieve a high success rate in landing a High-paying job at the professional field that i have mentioned in my goal. These course link can be sourced from highly trusted course providers like: NPTEL, Coursera, Udemy, Infosys SpringBoard, etc. I want you to prioritize as many free course as possible. Provide links to Paid Courses, only in cases where there is a significant differnece in the quality of the content between the free course and the paid course. I want you to provide 3 such plans: 1. "Short Duration path", in which the course links and contents will be planned in such a way that the entire plan can be completed in 3-6 months. So, you have to choose appropriate short duration courses for each step in the plan. 2. "Moderate Duration path", in which the course links and contents will be planned in such a way that the entire plan can be completed in 8-10 months. So, you have to choose appropriate moderate duration courses for each step in the plan. 3. "Long Duration path", in which the course links and contents will be planned in such a way that the entire plan can be completed in 12 months or more. So, you have to choose appropriate & high-quality long duration courses for each step in the plan. For each plan,  Double check the duration of the suggested courses before including them in the response.\nDetails about me:\n${details}\nYor response must be in json format. Additionally, i want you to also provide a very short and appropriate name of the profession i want to persure in my goal. Label it as "Title:" in your response. The plan/response provided will be gammified by adding information like Xps & badges earned for each completing each Step.Your response must strictly be in the following json format: { "Title": <Title of the curriculum>, "Long Duration Path" : [
+
+        {
+
+            "Phase": <Phase <number>: Name (Week x-y)>,
+
+            "Steps": [
+
+                {
+
+                    "Step": <Name of step without any numbering of step>,
+
+                    "Duration": <in weeks>,
+
+                    "Learning Pace": <Must include suffix "hours per week">,
+
+                    "XPs": <value>,
+
+                    "Badges": <value>,
+
+                    "Course Link": <link with markdown translation>,
+
+		    "Provider": "<The name of the course provider> - <Paid/Free/Partially Free/etc.>"
+
+                    "Alternative Free Link": <This will only be used when required and not always>,
+
+                    "Description": <value>
+
+                }, 
+
+            ]
+
+        },
+
+], "Moderate Duration Path" : [
+
+        {
+
+            "Phase": <Phase <number>: Name (Week x-y)>,
+
+            "Steps": [
+
+                {
+
+                    "Step": <Name of step without any numbering of step>,
+
+                    "Duration": <in weeks>,
+
+                    "Learning Pace": <Must include suffix "hours per week">,
+
+                    "XPs": <value>,
+
+                    "Badges": <value>,
+
+                    "Course Link": <link with markdown translation>,
+
+		    "Provider": "<The name of the course provider> - <Paid/Free/Partially Free/etc.>"
+
+                    "Alternative Free Link": <This will only be used when required and not always>,
+
+                    "Description": <value>
+
+                }, 
+
+            ]
+
+        },
+
+], "Short Duration Path" : [
+
+        {
+
+            "Phase": <Phase <number>: Name (Week x-y)>,
+
+            "Steps": [
+
+                {
+
+                    "Step": <Name of step without any numbering of step>,
+
+                    "Duration": <in weeks>,
+
+                    "Learning Pace": <Must include suffix "hours per week">,
+
+                    "XPs": <value>,
+
+                    "Badges": <value>,
+
+                    "Course Link": <link with markdown translation>,
+
+		    "Provider": "<The name of the course provider> - <Paid/Free/Partially Free/etc.>"
+
+                    "Alternative Free Link": <This will only be used when required and not always>,
+
+                    "Description": <value>
+
+                }, 
+
+            ]
+
+        },
+
+] 
+
+}`;
+
+// --- Loading Animation Logic ---
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingIconContainer = document.getElementById('loadingIconContainer');
+const loadingMessage = document.getElementById('loadingMessage');
+let loadingInterval;
+
+// Define the sequence of icons and messages for the animation
+const loadingStates = [
+    { icon: 'cpu', message: 'Analyzing your interests...' },
+    { icon: 'settings', message: 'Initializing Curriculum Creation...' },
+    { icon: 'fast-forward', message: 'Short Duration path is being created...' },
+    { icon: 'clock', message: 'Moderate Duration path is being created...' },
+    { icon: 'calendar', message: 'Long Duration path is being created...' },
+    { icon: 'loader', message: 'Please hang on, good things take time...' },
+    { icon: 'gift', message: 'Curating personalized Paths...' }
+];
+
+// Function to start the animation
+function startLoadingAnimation() {
+    loadingOverlay.style.display = 'flex'; // Make the overlay visible
+    let currentState = 0;
+
+    // Function to update the icon and text
+    const updateState = () => {
+        // Set the new icon and message
+        loadingIconContainer.innerHTML = `<i data-feather="${loadingStates[currentState].icon}" class="w-25 h-25"></i>`;
+        feather.replace(); // Re-render the new Feather icon
+        loadingMessage.textContent = loadingStates[currentState].message;
+        
+        // Move to the next state in the sequence
+        currentState = (currentState + 1) % loadingStates.length;
+    };
+
+    updateState(); // Show the initial state immediately
+    // Set an interval to cycle through the states every 4 seconds
+    loadingInterval = setInterval(updateState, 4000); 
+}
+
+// Function to stop the animation
+function stopLoadingAnimation() {
+    clearInterval(loadingInterval); // Stop the interval
+    loadingOverlay.style.display = 'none'; // Hide the overlay
+}
+
+// --- Triggering the Animation ---
+    startLoadingAnimation();
+                
+                const finalPackage = {
+                    mainPrompt: mainPromptFromUser,
+                    questionnaireResponses: responses,
+                    finalPromptForLLM: finalPromptForLLM // Add the final prompt to the package
+                };
+
+                // Send data to the backend to be saved and processed
+                fetch('/api/save_and_generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalPackage),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.redirect_url) {
+                        // Redirect to the new curriculum page
+                        window.location.href = data.redirect_url;
+                    } else {
+                        console.error('Error:', data.message);
+                        alert('Error: ' + data.message);
+                        stopLoadingAnimation(); // Also stop animation on fetch error
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('A network error occurred. Please try again.');
+                    stopLoadingAnimation(); // Stop animation on error
+                });
+                
+                questionnaireModal.classList.add('hidden');
+            });
+
+            initialize();
+        });
+    </script>
+
+</body>
+</html>
